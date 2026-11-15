@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#c8102e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>คำนวณเรทเงิน</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --red:#c8102e;--red-d:#9e0c24;--ink:#1d1d1f;--mute:#6b6b70;--line:#e4e4e8;
+  --bg:#f5f5f7;--card:#fff;--ok:#0a7d3e;--warn:#b35c00;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai","Sukhumvit Set",Tahoma,sans-serif;font-size:16px}
+header{background:var(--red);color:#fff;padding:calc(env(safe-area-inset-top) + 12px) 16px 0;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:18px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline}
+header h1 small{font-weight:400;font-size:12px;opacity:.85}
+nav{display:flex;gap:4px;margin-top:10px}
+nav button{flex:1;background:none;border:0;color:#fff;opacity:.7;padding:10px 4px 12px;font:inherit;font-size:15px;border-bottom:3px solid transparent;cursor:pointer}
+nav button.on{opacity:1;border-bottom-color:#fff;font-weight:600}
+main{max-width:720px;margin:0 auto;padding:14px 14px calc(env(safe-area-inset-bottom) + 40px)}
+.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+label.lbl{display:block;font-size:13px;color:var(--mute);margin-bottom:6px}
+.amt{display:flex;align-items:center;gap:8px;border:2px solid var(--line);border-radius:12px;padding:6px 12px;background:#fff}
+.amt:focus-within{border-color:var(--red)}
+.amt input{flex:1;border:0;outline:0;font-size:34px;font-weight:700;width:100%;min-width:0;background:none;color:var(--ink);font-variant-numeric:tabular-nums}
+.amt span{font-size:18px;color:var(--mute);font-weight:600}
+.amt button{border:0;background:#eee;border-radius:50%;width:30px;height:30px;font-size:16px;color:#666;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chips button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer}
+.chips button:active{background:#fde8eb}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.cur{background:var(--card);border-radius:12px;padding:10px 12px;border:2px solid transparent;cursor:pointer;text-align:left;font:inherit;color:inherit;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.cur.sel{border-color:var(--red)}
+.cur .top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mute)}
+.cur .code{font-weight:700;color:var(--ink);font-size:15px}
+.cur .val{font-size:24px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;word-break:break-all}
+.cur .rate{font-size:11px;color:var(--mute);margin-top:2px}
+.hint{font-size:13px;color:var(--mute);margin:8px 2px 10px}
+.change h3{margin:0 0 10px;font-size:16px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box{background:var(--bg);border-radius:10px;padding:10px}
+.box .k{font-size:12px;color:var(--mute)}
+.box .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.v.ok{color:var(--ok)}.v.bad{color:var(--red)}
+.small{font-size:12px;color:var(--mute);margin-top:8px;line-height:1.5}
+input.f,select.f{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:15px;background:#fff;color:var(--ink)}
+input.f:focus,select.f:focus{outline:0;border-color:var(--red)}
+.set{border-bottom:1px solid var(--line);padding:12px 0}
+.set:last-child{border-bottom:0}
+.set .hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.set .hd input.code{width:80px;font-weight:700}
+.set .hd input.name{flex:1}
+.fields{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.fields label{font-size:11px;color:var(--mute);display:block}
+@media (max-width:520px){.fields{grid-template-columns:1fr 1fr}}
+.iconbtn{border:0;background:none;font-size:18px;cursor:pointer;padding:4px 6px;color:var(--mute)}
+.btn{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;background:var(--red);color:#fff}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mute);white-space:nowrap}
+.saved{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 20px);transform:translateX(-50%);background:#222;color:#fff;padding:9px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.saved.on{opacity:.92}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:5px 6px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:#f0b27a33;position:sticky;top:0;font-weight:700}
+td:first-child,th:first-child{font-weight:700;background:#fafafa;position:sticky;left:0}
+.tblwrap{overflow:auto;max-height:70vh;border-radius:10px;border:1px solid var(--line)}
+.tblctl{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+textarea.f{width:100%;min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.hidden{display:none!important}
+.pv{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.pv table th{background:#f3f3f5}
+.pv th,.pv td{padding:5px 4px;font-size:12px}
+.pv td.warn{color:var(--warn);font-weight:700}
+.pv .msg{padding:10px;border-radius:10px;margin:8px 0;font-size:14px;line-height:1.55}
+.pv .msg.w{background:#fff4e5;color:#7a4100}
+.pv .msg.e{background:#fde8eb;color:var(--red-d)}
+.pv .msg.o{background:#e7f6ec;color:#0a5c2e}
+.chips button.on{background:var(--red);color:#fff;border-color:var(--red)}
+.chips button small{opacity:.7;font-size:11px;margin-left:4px}
+.note p,.note li{font-size:17px}
+.note h2{font-size:17px;margin:18px 0 6px;color:var(--red)}
+.note h2:first-child{margin-top:0}
+.note p{margin:0 0 10px;line-height:1.65}
+.note ul{margin:0 0 10px;padding-left:20px;line-height:1.65}
+.note li{margin-bottom:4px}
+#noteEdit{min-height:60vh;font-family:inherit;font-size:15px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <h1>คำนวณเรทเงิน <small id="effLbl"></small></h1>
+  <nav>
+    <button data-tab="calc" class="on">คำนวณ</button>
+    <button data-tab="table">ตารางราคา</button>
+    <button data-tab="settings">แก้เรท</button>
+    <button data-tab="note">โน้ต</button>
+  </nav>
+</header>
+
+<main>
+  <!-- คำนวณ -->
+  <section id="tab-calc">
+    <div class="card">
+      <label class="lbl" for="thb">ราคาสินค้า (บาท)</label>
+      <div class="amt">
+        <input id="thb" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+        <span>THB</span>
+        <button id="clr" aria-label="ล้าง">✕</button>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="grid" id="results"></div>
+    <div class="hint">แตะสกุลเงินเพื่อคำนวณเงินทอน</div>
+
+    <div class="card change hidden" id="changeCard">
+      <h3 id="chTitle"></h3>
+      <label class="lbl" for="paid" id="paidLbl"></label>
+      <div class="amt">
+        <input id="paid" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+        <span id="paidCur"></span>
+      </div>
+      <div class="row2" style="margin-top:12px">
+        <div class="box"><div class="k" id="kDiffCur">ทอน</div><div class="v" id="chCur">–</div></div>
+        <div class="box"><div class="k">ทอนเป็นบาท (เรททอน)</div><div class="v" id="chThb">–</div></div>
+      </div>
+      <div class="small" id="chNote"></div>
+    </div>
+  </section>
+
+  <!-- ตารางราคา -->
+  <section id="tab-table" class="hidden">
+    <div class="card">
+      <div class="tblctl">
+        <div><label class="lbl">เริ่ม (บาท)</label><input class="f" id="tStart" inputmode="decimal" value="25"></div>
+        <div><label class="lbl">ถึง (บาท)</label><input class="f" id="tEnd" inputmode="decimal" value="1000"></div>
+        <div><label class="lbl">เพิ่มทีละ</label><input class="f" id="tStep" inputmode="decimal" value="5"></div>
+      </div>
+      <div class="tblwrap"><table id="tbl"></table></div>
+      <div class="small">ตารางนี้ใช้ราคาจากตาราง PDF (ถ้าเปิด "ยึดราคาตามตาราง" ไว้) ส่วนราคาอื่นคิดจากเรทขายและการปัดเศษในหน้า "แก้เรท"</div>
+    </div>
+  </section>
+
+  <!-- แก้เรท -->
+  <section id="tab-settings" class="hidden">
+    <div class="card">
+      <label class="lbl">อัปเดตเรทจากไฟล์ PDF</label>
+      <button class="btn" id="pdfBtn">📄 นำเข้า PDF เรทใหม่</button>
+      <input type="file" id="pdfFile" accept="application/pdf,.pdf" class="hidden">
+      <div class="small">ต้องต่อเน็ตเฉพาะตอนนำเข้า (ครั้งแรกจะโหลดตัวอ่าน PDF) หลังจากนั้นใช้ออฟไลน์ได้ตามปกติ · PDF ต้องเป็นรูปแบบเดียวกับไฟล์เดิม (มีแถวเรทขาย/เรททอน และตาราง Selling price)</div>
+      <div id="pdfResult"></div>
+    </div>
+    <div class="card">
+      <label class="lbl" for="eff">ชื่อ/วันที่ของชุดเรท (แสดงบนหัวแอป)</label>
+      <input class="f" id="eff" placeholder="เช่น 16 Sep 2026">
+      <div class="small">
+        <b>เรทขาย</b> = กี่บาทต่อ 1 หน่วยเงินนั้น (ใช้แปลงราคาบาท → เงินต่างประเทศ)<br>
+        <b>เรททอน</b> = กี่บาทต่อ 1 หน่วย ใช้ตอนทอนเงินเป็นบาท<br>
+        <b>ปัดทีละ</b> = ปัดราคาเป็นหน่วยนี้ เช่น USD 0.5, JPY 50, VND 10000<br>
+        พิมพ์เศษส่วนได้ เช่น <code>1/45</code> · แก้แล้วบันทึกอัตโนมัติในเครื่อง
+      </div>
+    </div>
+    <div class="card">
+      <label class="toggle" style="font-size:15px;color:var(--ink);white-space:normal"><input type="checkbox" id="useTable"> ยึดราคาตามตาราง "Selling price on VZ" (PDF)</label>
+      <div class="small">ราคาบาทที่มีในตาราง PDF จะใช้ตัวเลขจากตารางตรงๆ ราคาอื่นคิดจากเรท ถ้าแก้เรทขายหรือการปัดของสกุลไหน สกุลนั้นจะเลิกใช้ตารางและคิดจากเรทใหม่ให้อัตโนมัติ</div>
+    </div>
+    <div class="card" id="setList"></div>
+    <div class="card">
+      <div class="btns" style="margin-top:0">
+        <button class="btn" id="addCur">+ เพิ่มสกุลเงิน</button>
+        <button class="btn sec" id="resetBtn">คืนค่าเริ่มต้น</button>
+      </div>
+    </div>
+    <div class="card">
+      <label class="lbl">สำรอง / ย้ายเรทไปเครื่องอื่น</label>
+      <div class="btns" style="margin-top:0">
+        <button class="btn sec" id="expBtn">ส่งออกไฟล์เรท</button>
+        <button class="btn sec" id="impBtn">นำเข้าไฟล์เรท</button>
+        <button class="btn sec" id="copyBtn">คัดลอกเป็นข้อความ</button>
+        <input type="file" id="impFile" accept=".json,application/json" class="hidden">
+      </div>
+      <textarea class="f" id="impText" style="margin-top:10px" placeholder="หรือวางข้อความเรทที่คัดลอกมาที่นี่ แล้วกด 'ใช้ข้อความนี้'"></textarea>
+      <div class="btns"><button class="btn sec" id="impTextBtn">ใช้ข้อความนี้</button></div>
+    </div>
+  </section>
+  <!-- โน้ต -->
+  <section id="tab-note" class="hidden">
+    <div class="chips" id="langChips" style="margin:0 0 10px"></div>
+    <div class="card note" id="noteView"></div>
+    <div class="card hidden" id="noteEditWrap">
+      <div class="small" style="margin-top:0;margin-bottom:8px">พิมพ์ <code># </code> นำหน้าบรรทัดเพื่อทำหัวข้อ, <code>- </code> นำหน้าเพื่อทำข้อย่อย, เว้นบรรทัดเพื่อขึ้นย่อหน้าใหม่</div>
+      <textarea class="f" id="noteEdit"></textarea>
+    </div>
+    <div class="btns">
+      <button class="btn sec" id="noteBtn">แก้ไขโน้ต</button>
+      <button class="btn sec hidden" id="noteResetBtn">คืนโน้ตเริ่มต้น</button>
+    </div>
+  </section>
+</main>
+<div class="saved" id="toast">บันทึกแล้ว</div>
+
+<script>
+(function(){
+"use strict";
+var KEY = "fx-calc-v1";
+
+// ค่าเริ่มต้น: ตั้งให้ตรงกับตาราง "Selling price on VZ" ใน PDF
+var DEFAULTS = {
+  effective: "16 Sep 2026",
+  quick: [50, 100, 150, 200, 300, 500, 1000],
+  currencies: [
+    {code:"USD", name:"ดอลลาร์สหรัฐ",  flag:"🇺🇸", sell:"34",     change:"32",     step:"0.5",   mode:"ceil",  on:true},
+    {code:"VND", name:"ด่องเวียดนาม",   flag:"🇻🇳", sell:"0.0015", change:"0.0012", step:"10000", mode:"ceil",  on:true},
+    {code:"CNY", name:"หยวนจีน",        flag:"🇨🇳", sell:"4",      change:"3",      step:"1",     mode:"round", on:true},
+    {code:"SGD", name:"ดอลลาร์สิงคโปร์", flag:"🇸🇬", sell:"25",     change:"23",     step:"1",     mode:"ceil",  on:true},
+    {code:"JPY", name:"เยนญี่ปุ่น",      flag:"🇯🇵", sell:"0.23",   change:"0.20",   step:"50",    mode:"ceil",  on:true},
+    {code:"INR", name:"รูปีอินเดีย",     flag:"🇮🇳", sell:"0.4",    change:"0.2",    step:"5",     mode:"ceil",  on:true},
+    {code:"TWD", name:"ดอลลาร์ไต้หวัน",  flag:"🇹🇼", sell:"1",      change:"1",      step:"1",     mode:"ceil",  on:true},
+    {code:"HKD", name:"ดอลลาร์ฮ่องกง",   flag:"🇭🇰", sell:"3",      change:"3",      step:"1",     mode:"round", on:true},
+    {code:"MYR", name:"ริงกิตมาเลเซีย",  flag:"🇲🇾", sell:"6.25",   change:"6",      step:"1",     mode:"round", on:true},
+    {code:"MOP", name:"ปาตากามาเก๊า",    flag:"🇲🇴", sell:"4.5",    change:"4",      step:"10",    mode:"ceil",  on:true},
+    {code:"KRW", name:"วอนเกาหลี",       flag:"🇰🇷", sell:"1/45",   change:"0.015",  step:"100",   mode:"ceil",  on:true}
+  ]
+};
+
+var NOTE_LANGS = [
+{
+"id": "th",
+"label": "ไทย",
+"cur": "THB",
+"text": "# เกี่ยวกับเรทแลกเปลี่ยน\nบนเครื่องเราจะใช้เรทที่บริษัทกำหนดให้เท่านั้น ไม่ได้อิงเรทธนาคารหรือเรทตลาดในแต่ละวัน เพื่อให้ราคาเท่ากันทุกเที่ยวบินและผู้โดยสารทุกท่านได้ราคาเดียวกัน ส่วนเงินทอนจะทอนเป็นเงินบาท (THB) ตามอัตราแลกเปลี่ยนบนเครื่องเช่นกัน"
+},
+{
+"id": "en",
+"label": "English",
+"cur": "USD · SGD",
+"text": "# About exchange rates\nOn board, we use only the exchange rates set by the company. They are not based on daily bank or market rates, so prices are the same on every flight and every passenger pays the same price. Change will be given in Thai Baht (THB), also at the on-board exchange rate."
+},
+{
+"id": "vi",
+"label": "Tiếng Việt",
+"cur": "VND",
+"text": "# Về tỷ giá hối đoái\nTrên chuyến bay, chúng tôi chỉ áp dụng tỷ giá do công ty quy định, không dựa theo tỷ giá ngân hàng hay tỷ giá thị trường hằng ngày, để giá bán giống nhau trên mọi chuyến bay và mọi hành khách đều được hưởng cùng một mức giá. Tiền thối lại sẽ được trả bằng đồng Baht Thái (THB), cũng theo tỷ giá trên chuyến bay."
+},
+{
+"id": "zh-Hans",
+"label": "简体中文",
+"cur": "CNY",
+"text": "# 关于汇率\n机上仅使用公司规定的汇率，不参照每日的银行汇率或市场汇率，以确保每个航班的价格一致，每位旅客都享有相同的价格。找零将以泰铢（THB）支付，同样按照机上汇率计算。"
+},
+{
+"id": "zh-Hant",
+"label": "繁體中文",
+"cur": "TWD · HKD · MOP",
+"text": "# 關於匯率\n機上僅使用公司規定的匯率，不參照每日的銀行匯率或市場匯率，以確保每個航班的價格一致，每位旅客都享有相同的價格。找零將以泰銖（THB）支付，同樣按照機上匯率計算。"
+},
+{
+"id": "ja",
+"label": "日本語",
+"cur": "JPY",
+"text": "# 為替レートについて\n機内では、会社が定めた為替レートのみを使用しております。日々の銀行レートや市場レートには基づいておらず、すべての便で同じ価格となり、すべてのお客様に同じ価格でご購入いただけます。お釣りは、機内の為替レートにてタイバーツ（THB）でお返しいたします。"
+},
+{
+"id": "hi",
+"label": "हिन्दी",
+"cur": "INR",
+"text": "# विनिमय दर के बारे में\nविमान में हम केवल कंपनी द्वारा निर्धारित विनिमय दर का ही उपयोग करते हैं। यह दर बैंक या बाज़ार की दैनिक दरों पर आधारित नहीं है, ताकि हर उड़ान में कीमत एक समान रहे और सभी यात्रियों को एक ही कीमत मिले। बकाया राशि थाई बाट (THB) में, विमान की विनिमय दर के अनुसार ही लौटाई जाएगी।"
+},
+{
+"id": "ms",
+"label": "Bahasa Melayu",
+"cur": "MYR",
+"text": "# Mengenai kadar pertukaran\nDi dalam pesawat, kami hanya menggunakan kadar pertukaran yang ditetapkan oleh syarikat, bukan berdasarkan kadar bank atau kadar pasaran harian, supaya harga adalah sama bagi setiap penerbangan dan semua penumpang mendapat harga yang sama. Wang baki akan diberikan dalam Baht Thai (THB), juga mengikut kadar pertukaran di dalam pesawat."
+},
+{
+"id": "ko",
+"label": "한국어",
+"cur": "KRW",
+"text": "# 환율 안내\n기내에서는 회사가 정한 환율만 사용하며, 매일 변동하는 은행 환율이나 시장 환율을 적용하지 않습니다. 이를 통해 모든 항공편에서 가격이 동일하며, 모든 승객분께 같은 가격으로 제공됩니다. 거스름돈 또한 기내 환율에 따라 태국 바트(THB)로 드립니다."
+}
+];
+
+// ราคาตามตาราง "Selling price on VZ" ใน PDF (ใช้ตรงๆ เมื่อราคาบาทตรงกับแถวในตาราง)
+var PDF_CODES = ["USD", "VND", "CNY", "SGD", "JPY", "INR", "TWD", "HKD", "MYR", "MOP", "KRW"];
+var PDF_TABLE = {"25":[1.0,20000,6,1.0,150,69,25,8,4,10,1200.0],"30":[1.0,20000,8,2.0,150,75,30,10,5,10,1400.0],"35":[1.0,30000,9,2.0,200,90,35,12,6,10,1600.0],"40":[1.5,30000,10,2.0,200,100,40,13,6,10,1800.0],"45":[1.5,30000,11,2.0,200,115,45,15,7,10,2100.0],"50":[1.5,40000,13,2.0,250,125,50,17,8,20,2300.0],"55":[2.0,40000,14,3.0,250,140,55,18,9,20,2500.0],"60":[2.0,40000,15,3.0,300,150,60,20,10,20,2700.0],"65":[2.0,50000,16,3.0,300,165,65,22,10,20,3000.0],"70":[2.5,50000,18,3.0,350,175,70,23,11,20,3200.0],"75":[2.5,50000,19,3.0,350,190,75,25,12,20,3400.0],"80":[2.5,60000,20,4.0,350,200,80,27,13,20,3600.0],"85":[2.5,60000,21,4.0,400,215,85,28,14,20,3900.0],"90":[3.0,60000,23,4.0,400,225,90,30,14,20,4100.0],"95":[3.0,70000,24,4.0,450,240,95,32,15,30,4300.0],"100":[3.0,70000,25,4.0,450,250,100,33,16,30,4500.0],"105":[3.5,70000,26,5.0,500,265,105,35,17,30,4800.0],"110":[3.5,80000,28,5.0,500,275,110,37,18,30,5000.0],"115":[3.5,80000,29,5.0,500,290,115,38,18,30,5200.0],"120":[4.0,80000,30,5.0,550,300,120,40,19,30,5400.0],"125":[4.0,90000,31,5.0,550,315,125,42,20,30,5700.0],"130":[4.0,90000,33,6.0,600,325,130,43,21,30,5900.0],"135":[4.0,90000,34,6.0,600,340,135,45,22,30,6100.0],"140":[4.5,100000,35,6.0,650,350,140,47,22,40,6300.0],"145":[4.5,100000,36,6.0,650,365,145,48,23,40,6600.0],"150":[4.5,100000,38,6.0,700,375,150,50,24,40,6800.0],"155":[5.0,110000,39,7.0,700,390,155,52,25,40,7000.0],"160":[5.0,110000,40,7.0,700,400,160,53,26,40,7200.0],"165":[5.0,110000,41,7.0,750,415,165,55,26,40,7500.0],"170":[5.0,120000,43,7.0,750,425,170,57,27,40,7700.0],"175":[5.5,120000,44,7.0,800,440,175,58,28,40,7900.0],"180":[5.5,120000,45,8.0,800,450,180,60,29,40,8100.0],"185":[5.5,130000,46,8.0,850,465,185,62,30,50,8400.0],"190":[6.0,130000,48,8.0,850,475,190,63,30,50,8600.0],"195":[6.0,130000,49,8.0,850,490,195,65,31,50,8800.0],"200":[6.0,140000,50,8.0,900,500,200,67,32,50,9000.0],"205":[6.5,140000,51,9.0,900,515,205,68,33,50,9300.0],"210":[6.5,140000,53,9.0,950,525,210,70,34,50,9500.0],"215":[6.5,150000,54,9.0,950,540,215,72,34,50,9700.0],"220":[6.5,150000,55,9.0,1000,550,220,73,35,50,9900.0],"225":[7.0,150000,56,9.0,1000,565,225,75,36,50,10200.0],"230":[7.0,160000,58,10.0,1000,575,230,77,37,60,10400.0],"235":[7.0,160000,59,10.0,1050,590,235,78,38,60,10600.0],"240":[7.5,160000,60,10.0,1050,600,240,80,38,60,10800.0],"245":[7.5,170000,61,10.0,1100,615,245,82,39,60,11100.0],"250":[7.5,170000,63,10.0,1100,625,250,83,40,60,11300.0],"255":[7.5,170000,64,11.0,1150,640,255,85,41,60,11500.0],"260":[8.0,180000,65,11.0,1150,650,260,87,42,60,11700.0],"265":[8.0,180000,66,11.0,1200,665,265,88,42,60,12000.0],"270":[8.0,180000,68,11.0,1200,675,270,90,43,60,12200.0],"275":[8.5,190000,69,11.0,1200,690,275,92,44,70,12400.0],"280":[8.5,190000,70,12.0,1250,700,280,93,45,70,12600.0],"285":[8.5,190000,71,12.0,1250,715,285,95,46,70,12900.0],"290":[9.0,200000,73,12.0,1300,725,290,97,46,70,13100.0],"295":[9.0,200000,74,12.0,1300,740,295,98,47,70,13300.0],"299":[9.0,200000,75,12.0,1300,750,299,100,48,70,13500.0],"300":[9.0,200000,75,12.0,1350,750,300,100,48,70,13500.0],"305":[9.0,210000,76,13.0,1350,765,305,102,49,70,13800.0],"310":[9.5,210000,78,13.0,1350,775,310,103,50,70,14000.0],"315":[9.5,210000,79,13.0,1400,790,315,105,50,70,14200.0],"320":[9.5,220000,80,13.0,1400,800,320,107,51,80,14400.0],"325":[10.0,220000,81,13.0,1450,815,325,108,52,80,14700.0],"330":[10.0,220000,83,14.0,1450,825,330,110,53,80,14900.0],"335":[10.0,230000,84,14.0,1500,840,335,112,54,80,15100.0],"340":[10.0,230000,85,14.0,1500,850,340,113,54,80,15300.0],"345":[10.5,230000,86,14.0,1500,865,345,115,55,80,15600.0],"350":[10.5,240000,88,14.0,1550,875,350,117,56,80,15800.0],"355":[10.5,240000,89,15.0,1550,890,355,118,57,80,16000.0],"360":[11.0,240000,90,15.0,1600,900,360,120,58,80,16200.0],"365":[11.0,250000,91,15.0,1600,915,365,122,58,90,16500.0],"370":[11.0,250000,93,15.0,1650,925,370,123,59,90,16700.0],"375":[11.5,250000,94,15.0,1650,940,375,125,60,90,16900.0],"380":[11.5,260000,95,16.0,1700,950,380,127,61,90,17100.0],"385":[11.5,260000,96,16.0,1700,965,385,128,62,90,17400.0],"390":[11.5,260000,98,16.0,1700,975,390,130,62,90,17600.0],"395":[12.0,270000,99,16.0,1750,990,395,132,63,90,17800.0],"400":[12.0,270000,100,16.0,1750,1000,400,133,64,90,18000.0],"405":[12.0,270000,101,17.0,1800,1015,405,135,65,90,18300.0],"410":[12.5,280000,103,17.0,1800,1025,410,137,66,100,18500.0],"415":[12.5,280000,104,17.0,1850,1040,415,138,66,100,18700.0],"420":[12.5,280000,105,17.0,1850,1050,420,140,67,100,18900.0],"425":[12.5,290000,106,17.0,1850,1065,425,142,68,100,19200.0],"430":[13.0,290000,108,18.0,1900,1075,430,143,69,100,19400.0],"435":[13.0,290000,109,18.0,1900,1090,435,145,70,100,19600.0],"440":[13.0,300000,110,18.0,1950,1100,440,147,70,100,19800.0],"445":[13.5,300000,111,18.0,1950,1115,445,148,71,100,20100.0],"450":[13.5,300000,113,18.0,2000,1125,450,150,72,100,20300.0],"455":[13.5,310000,114,19.0,2000,1140,455,152,73,110,20500.0],"460":[14.0,310000,115,19.0,2000,1150,460,153,74,110,20700.0],"465":[14.0,310000,116,19.0,2050,1165,465,155,74,110,21000.0],"470":[14.0,320000,118,19.0,2050,1175,470,157,75,110,21200.0],"475":[14.0,320000,119,19.0,2100,1190,475,158,76,110,21400.0],"480":[14.5,320000,120,20.0,2100,1200,480,160,77,110,21600.0],"485":[14.5,330000,121,20.0,2150,1215,485,162,78,110,21900.0],"490":[14.5,330000,123,20.0,2150,1225,490,163,78,110,22100.0],"495":[15.0,330000,124,20.0,2200,1240,495,165,79,110,22300.0],"500":[15.0,340000,125,20.0,2200,1250,500,167,80,120,22500.0],"505":[15.0,340000,126,21.0,2200,1265,505,168,81,120,22800.0],"510":[15.0,340000,128,21.0,2250,1275,510,170,82,120,23000.0],"515":[15.5,350000,129,21.0,2250,1290,515,172,82,120,23200.0],"520":[15.5,350000,130,21.0,2300,1300,520,173,83,120,23400.0],"525":[15.5,350000,131,21.0,2300,1315,525,175,84,120,23700.0],"530":[16.0,360000,133,22.0,2350,1325,530,177,85,120,23900.0],"535":[16.0,360000,134,22.0,2350,1340,535,178,86,120,24100.0],"540":[16.0,360000,135,22.0,2350,1350,540,180,86,120,24300.0],"545":[16.5,370000,136,22.0,2400,1365,545,182,87,130,24600.0],"550":[16.5,370000,138,22.0,2400,1375,550,183,88,130,24800.0],"555":[16.5,370000,139,23.0,2450,1390,555,185,89,130,25000.0],"560":[16.5,380000,140,23.0,2450,1400,560,187,90,130,25200.0],"565":[17.0,380000,141,23.0,2500,1415,565,188,90,130,25500.0],"570":[17.0,380000,143,23.0,2500,1425,570,190,91,130,25700.0],"575":[17.0,390000,144,23.0,2500,1440,575,192,92,130,25900.0],"580":[17.5,390000,145,24.0,2550,1450,580,193,93,130,26100.0],"585":[17.5,390000,146,24.0,2550,1465,585,195,94,130,26400.0],"590":[17.5,400000,148,24.0,2600,1475,590,197,94,140,26600.0],"595":[17.5,400000,149,24.0,2600,1490,595,198,95,140,26800.0],"600":[18.0,400000,150,24.0,2650,1500,600,200,96,140,27000.0],"605":[18.0,410000,151,25.0,2650,1515,605,202,97,140,27300.0],"610":[18.0,410000,153,25.0,2700,1525,610,203,98,140,27500.0],"615":[18.5,410000,154,25.0,2700,1540,615,205,98,140,27700.0],"620":[18.5,420000,155,25.0,2700,1550,620,207,99,140,27900.0],"625":[18.5,420000,156,25.0,2750,1565,625,208,100,140,28200.0],"630":[19.0,420000,158,26.0,2750,1575,630,210,101,140,28400.0],"635":[19.0,430000,159,26.0,2800,1590,635,212,102,150,28600.0],"640":[19.0,430000,160,26.0,2800,1600,640,213,102,150,28800.0],"645":[19.0,430000,161,26.0,2850,1615,645,215,103,150,29100.0],"650":[19.5,440000,163,26.0,2850,1625,650,217,104,150,29300.0],"655":[19.5,440000,164,27.0,2850,1640,655,218,105,150,29500.0],"660":[19.5,440000,165,27.0,2900,1650,660,220,106,150,29700.0],"665":[20.0,450000,166,27.0,2900,1665,665,222,106,150,30000.0],"670":[20.0,450000,168,27.0,2950,1675,670,223,107,150,30200.0],"675":[20.0,450000,169,27.0,2950,1690,675,225,108,150,30400.0],"680":[20.0,460000,170,28.0,3000,1700,680,227,109,160,30600.0],"685":[20.5,460000,171,28.0,3000,1715,685,228,110,160,30900.0],"690":[20.5,460000,173,28.0,3000,1725,690,230,110,160,31100.0],"695":[20.5,470000,174,28.0,3050,1740,695,232,111,160,31300.0],"700":[21.0,470000,175,28.0,3050,1750,700,233,112,160,31500.0],"705":[21.0,470000,176,29.0,3100,1765,705,235,113,160,31800.0],"710":[21.0,480000,178,29.0,3100,1775,710,237,114,160,32000.0],"715":[21.5,480000,179,29.0,3150,1790,715,238,114,160,32200.0],"720":[21.5,480000,180,29.0,3150,1800,720,240,115,160,32400.0],"725":[21.5,490000,181,29.0,3200,1815,725,242,116,170,32700.0],"730":[21.5,490000,183,30.0,3200,1825,730,243,117,170,32900.0],"735":[22.0,490000,184,30.0,3200,1840,735,245,118,170,33100.0],"740":[22.0,500000,185,30.0,3250,1850,740,247,118,170,33300.0],"745":[22.0,500000,186,30.0,3250,1865,745,248,119,170,33600.0],"750":[22.5,500000,188,30.0,3300,1875,750,250,120,170,33800.0],"755":[22.5,510000,189,31.0,3300,1890,755,252,121,170,34000.0],"760":[22.5,510000,190,31.0,3350,1900,760,253,122,170,34200.0],"765":[22.5,510000,191,31.0,3350,1915,765,255,122,170,34500.0],"770":[23.0,520000,193,31.0,3350,1925,770,257,123,180,34700.0],"775":[23.0,520000,194,31.0,3400,1940,775,258,124,180,34900.0],"780":[23.0,520000,195,32.0,3400,1950,780,260,125,180,35100.0],"785":[23.5,530000,196,32.0,3450,1965,785,262,126,180,35400.0],"790":[23.5,530000,198,32.0,3450,1975,790,263,126,180,35600.0],"795":[23.5,530000,199,32.0,3500,1990,795,265,127,180,35800.0],"800":[24.0,540000,200,32.0,3500,2000,800,267,128,180,36000.0],"805":[24.0,540000,201,33.0,3500,2015,805,268,129,180,36300.0],"810":[24.0,540000,203,33.0,3550,2025,810,270,130,180,36500.0],"815":[24.0,550000,204,33.0,3550,2040,815,272,130,190,36700.0],"820":[24.5,550000,205,33.0,3600,2050,820,273,131,190,36900.0],"825":[24.5,550000,206,33.0,3600,2065,825,275,132,190,37200.0],"830":[24.5,560000,208,34.0,3650,2075,830,277,133,190,37400.0],"835":[25.0,560000,209,34.0,3650,2090,835,278,134,190,37600.0],"840":[25.0,560000,210,34.0,3700,2100,840,280,134,190,37800.0],"845":[25.0,570000,211,34.0,3700,2115,845,282,135,190,38100.0],"850":[25.0,570000,213,34.0,3700,2125,850,283,136,190,38300.0],"855":[25.5,570000,214,35.0,3750,2140,855,285,137,190,38500.0],"860":[25.5,580000,215,35.0,3750,2150,860,287,138,200,38700.0],"865":[25.5,580000,216,35.0,3800,2165,865,288,138,200,39000.0],"870":[26.0,580000,218,35.0,3800,2175,870,290,139,200,39200.0],"875":[26.0,590000,219,35.0,3850,2190,875,292,140,200,39400.0],"880":[26.0,590000,220,36.0,3850,2200,880,293,141,200,39600.0],"885":[26.5,590000,221,36.0,3850,2215,885,295,142,200,39900.0],"890":[26.5,600000,223,36.0,3900,2225,890,297,142,200,40100.0],"895":[26.5,600000,224,36.0,3900,2240,895,298,143,200,40300.0],"900":[26.5,600000,225,36.0,3950,2250,900,300,144,200,40500.0],"905":[27.0,610000,226,37.0,3950,2265,905,302,145,210,40800.0],"910":[27.0,610000,228,37.0,4000,2275,910,303,146,210,41000.0],"915":[27.0,610000,229,37.0,4000,2290,915,305,146,210,41200.0],"920":[27.5,620000,230,37.0,4000,2300,920,307,147,210,41400.0],"925":[27.5,620000,231,37.0,4050,2315,925,308,148,210,41700.0],"930":[27.5,620000,233,38.0,4050,2325,930,310,149,210,41900.0],"935":[27.5,630000,234,38.0,4100,2340,935,312,150,210,42100.0],"940":[28.0,630000,235,38.0,4100,2350,940,313,150,210,42300.0],"945":[28.0,630000,236,38.0,4150,2365,945,315,151,210,42600.0],"950":[28.0,640000,238,38.0,4150,2375,950,317,152,220,42800.0],"955":[28.5,640000,239,39.0,4200,2390,955,318,153,220,43000.0],"960":[28.5,640000,240,39.0,4200,2400,960,320,154,220,43200.0],"965":[28.5,650000,241,39.0,4200,2415,965,322,154,220,43500.0],"970":[29.0,650000,243,39.0,4250,2425,970,323,155,220,43700.0],"975":[29.0,650000,244,39.0,4250,2440,975,325,156,220,43900.0],"980":[29.0,660000,245,40.0,4300,2450,980,327,157,220,44100.0],"985":[29.0,660000,246,40.0,4300,2465,985,328,158,220,44400.0],"990":[29.5,660000,248,40.0,4350,2475,990,330,158,220,44600.0],"995":[29.5,670000,249,40.0,4350,2490,995,332,159,230,44800.0],"1000":[29.5,670000,250,40.0,4350,2500,1000,333,160,230,45000.0],"1050":[31.0,700000,263,42.0,4600,2625,1050,350,168,240,47300.0],"1200":[35.5,800000,300,48.0,5250,3000,1200,400,192,270,54000.0],"1500":[44.5,1000000,375,60.0,6550,3750,1500,500,240,340,67500.0],"1800":[53.0,1200000,450,72.0,7850,4500,1800,600,288,400,81000.0],"2200":[65.0,1470000,550,88.0,9600,5500,2200,733,352,490,99000.0],"2220":[65.5,1480000,555,90.0,9700,5550,2220,740,355,500,99900.0],"2500":[74.0,1670000,625,100.0,10900,6250,2500,833,400,560,112500.0]};
+
+var state, selected = null;
+
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function load(){
+  try { var s = localStorage.getItem(KEY); if (s) { var p = JSON.parse(s); if (p && p.currencies) return p; } } catch(e){}
+  return clone(DEFAULTS);
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(state)); toast("บันทึกแล้ว"); }
+  catch(e){ toast("บันทึกในเครื่องไม่ได้ — ใช้ปุ่มส่งออกเพื่อสำรอง"); }
+}
+var tt;
+function toast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(tt); tt=setTimeout(function(){t.classList.remove("on");},1400); }
+
+// อ่านตัวเลข รองรับ "1/45" และเครื่องหมายจุลภาค
+function num(v){
+  if (v == null) return NaN;
+  v = String(v).replace(/,/g,"").trim();
+  if (!v) return NaN;
+  if (v.indexOf("/") > -1){ var p=v.split("/"); var a=parseFloat(p[0]), b=parseFloat(p[1]); return (b? a/b : NaN); }
+  return parseFloat(v);
+}
+function decimals(step){ var s=String(step); if (s.indexOf("e-")>-1) return parseInt(s.split("e-")[1],10); var i=s.indexOf("."); return i<0?0:s.length-i-1; }
+function roundTo(x, step, mode){
+  if (!(step > 0)) return x;
+  var q = x / step, eps = 1e-9 * Math.max(1, Math.abs(q));
+  q = mode==="ceil" ? Math.ceil(q - eps) : mode==="floor" ? Math.floor(q + eps) : mode==="none" ? q : Math.round(q + eps);
+  return q * step;
+}
+// ตารางราคาที่ใช้อยู่: ที่นำเข้าจาก PDF ล่าสุด หรือตารางในตัวแอป
+function builtinTable(){
+  var rates = {};
+  DEFAULTS.currencies.forEach(function(c){ rates[c.code] = {sell:c.sell, step:c.step, mode:c.mode}; });
+  return {codes:PDF_CODES, rows:PDF_TABLE, rates:rates};
+}
+function activeTable(){ return state.priceTable || builtinTable(); }
+// ใช้ราคาจากตารางได้ก็ต่อเมื่อเปิดตัวเลือกไว้ และเรทขาย/การปัดของสกุลนั้นยังตรงกับตอนที่ได้ตารางมา
+function tableValue(thb, c){
+  if (state.useTable === false) return null;
+  var t = activeTable(), idx = t.codes.indexOf(c.code), d = t.rates[c.code];
+  if (!d || idx < 0) return null;
+  if (num(c.sell) !== num(d.sell) || num(c.step) !== num(d.step) || c.mode !== d.mode) return null;
+  var row = t.rows[String(+thb)];
+  return row && row[idx] != null ? row[idx] : null;
+}
+function convert(thb, c){
+  var tv = tableValue(thb, c); if (tv != null) return tv;
+  var r = num(c.sell), s = num(c.step);
+  if (!(r > 0) || !(thb >= 0)) return NaN;
+  return roundTo(thb / r, s, c.mode);
+}
+function fmt(x, c){
+  if (!isFinite(x)) return "–";
+  var d = c ? (c.mode==="none" ? 2 : decimals(c.step)) : 2;
+  if (c && c.code==="USD" && d<1) d=1;
+  return x.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function fmtRate(v){ var n=num(v); if(!isFinite(n)) return "?"; return String(v).indexOf("/")>-1 ? v+" ("+(+n.toPrecision(4))+")" : String(v); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch];}); }
+function active(){ return state.currencies.filter(function(c){ return c.on; }); }
+
+// ---------- คำนวณ ----------
+var thbIn = document.getElementById("thb");
+function renderChips(){
+  var h=""; (state.quick||[]).forEach(function(q){ h+='<button data-q="'+q+'">'+q.toLocaleString()+'</button>'; });
+  document.getElementById("chips").innerHTML = h;
+}
+function renderResults(){
+  var thb = num(thbIn.value), h="";
+  active().forEach(function(c, i){
+    var v = isFinite(thb) ? convert(thb, c) : NaN;
+    h += '<button class="cur'+(selected===c.code?' sel':'')+'" data-code="'+esc(c.code)+'">'+
+      '<div class="top"><span><span class="code">'+esc(c.code)+'</span> '+(c.flag||"")+'</span></div>'+
+      '<div class="val">'+fmt(v,c)+'</div>'+
+      '<div class="rate">'+(isFinite(thb)&&tableValue(thb,c)!=null?'ตามตาราง PDF':'ขาย '+esc(fmtRate(c.sell))+' ฿ · ปัด '+esc(c.step))+'</div></button>';
+  });
+  document.getElementById("results").innerHTML = h || '<div class="card">ยังไม่มีสกุลเงินที่เปิดใช้ — ไปที่ "แก้เรท"</div>';
+  renderChange();
+}
+function curByCode(code){ for (var i=0;i<state.currencies.length;i++) if (state.currencies[i].code===code) return state.currencies[i]; return null; }
+function renderChange(){
+  var card = document.getElementById("changeCard");
+  var c = selected && curByCode(selected);
+  if (!c || !c.on){ card.classList.add("hidden"); return; }
+  card.classList.remove("hidden");
+  var thb = num(thbIn.value), price = isFinite(thb) ? convert(thb, c) : NaN;
+  document.getElementById("chTitle").textContent = "เงินทอน — ลูกค้าจ่ายเป็น " + c.code;
+  document.getElementById("paidLbl").textContent = "ลูกค้าจ่าย ("+c.code+") · ราคาที่ต้องจ่าย " + fmt(price,c) + " " + c.code;
+  document.getElementById("paidCur").textContent = c.code;
+  var paid = num(document.getElementById("paid").value);
+  var eCur = document.getElementById("chCur"), eThb = document.getElementById("chThb"), note = document.getElementById("chNote");
+  eCur.className="v"; eThb.className="v";
+  document.getElementById("kDiffCur").textContent = "ทอนเป็น " + c.code;
+  if (!isFinite(paid) || !isFinite(price)){ eCur.textContent="–"; eThb.textContent="–"; note.textContent=""; return; }
+  var diff = paid - price;
+  if (diff < -1e-9){
+    var shortThb = Math.ceil(-diff * num(c.sell) - 1e-9);
+    eCur.textContent = "ขาด " + fmt(-diff,c); eCur.classList.add("bad");
+    eThb.textContent = "ขาด ≈ " + shortThb.toLocaleString() + " ฿"; eThb.classList.add("bad");
+    note.textContent = "ส่วนที่ขาดคิดเป็นบาทตามเรทขาย (" + fmtRate(c.sell) + " ฿/" + c.code + ")";
+    return;
+  }
+  var chThb = Math.floor(diff * num(c.change) + 1e-9);
+  eCur.textContent = fmt(diff,c); eCur.classList.add("ok");
+  eThb.textContent = isFinite(chThb) ? chThb.toLocaleString() + " ฿" : "–"; eThb.classList.add("ok");
+  note.textContent = "ทอนเป็นบาท = " + fmt(diff,c) + " " + c.code + " × เรททอน " + fmtRate(c.change) + " ปัดลงเป็นบาทเต็ม";
+}
+thbIn.addEventListener("input", renderResults);
+document.getElementById("paid").addEventListener("input", renderChange);
+document.getElementById("clr").addEventListener("click", function(){ thbIn.value=""; document.getElementById("paid").value=""; renderResults(); thbIn.focus(); });
+document.getElementById("chips").addEventListener("click", function(e){ var b=e.target.closest("button"); if(!b) return; thbIn.value=b.dataset.q; renderResults(); });
+document.getElementById("results").addEventListener("click", function(e){
+  var b=e.target.closest(".cur"); if(!b) return;
+  selected = (selected===b.dataset.code) ? null : b.dataset.code;
+  document.getElementById("paid").value="";
+  renderResults();
+  if (selected) setTimeout(function(){ document.getElementById("changeCard").scrollIntoView({behavior:"smooth",block:"nearest"}); },30);
+});
+
+// ---------- ตาราง ----------
+function renderTable(){
+  var a=num(document.getElementById("tStart").value), b=num(document.getElementById("tEnd").value), s=num(document.getElementById("tStep").value);
+  var cs = active(), h = "<thead><tr><th>THB</th>";
+  cs.forEach(function(c){ h += "<th>"+esc(c.code)+"</th>"; });
+  h += "</tr></thead><tbody>";
+  if (a>=0 && b>=a && s>0 && (b-a)/s <= 2000){
+    for (var t=a; t<=b+1e-9; t+=s){
+      var tv = +t.toFixed(6);
+      h += "<tr><td>"+tv.toLocaleString()+"</td>";
+      cs.forEach(function(c){ h += "<td>"+fmt(convert(tv,c),c)+"</td>"; });
+      h += "</tr>";
+    }
+  } else h += '<tr><td colspan="'+(cs.length+1)+'" style="text-align:left">ตั้งช่วงให้ถูกต้อง (ไม่เกิน 2,000 แถว)</td></tr>';
+  document.getElementById("tbl").innerHTML = h + "</tbody>";
+}
+["tStart","tEnd","tStep"].forEach(function(id){ document.getElementById(id).addEventListener("input", renderTable); });
+
+// ---------- แก้เรท ----------
+function renderSettings(){
+  document.getElementById("eff").value = state.effective || "";
+  document.getElementById("useTable").checked = state.useTable !== false;
+  var h = "";
+  state.currencies.forEach(function(c, i){
+    var bad = !(num(c.sell) > 0);
+    h += '<div class="set" data-i="'+i+'">'+
+      '<div class="hd">'+
+        '<input class="f code" data-k="code" value="'+esc(c.code)+'" maxlength="6">'+
+        '<input class="f name" data-k="name" value="'+esc(c.name)+'" placeholder="ชื่อ">'+
+        '<label class="toggle"><input type="checkbox" data-k="on"'+(c.on?' checked':'')+'> ใช้</label>'+
+        '<button class="iconbtn" data-act="up" title="เลื่อนขึ้น">↑</button>'+
+        '<button class="iconbtn" data-act="del" title="ลบ">🗑</button>'+
+      '</div>'+
+      '<div class="fields">'+
+        '<div><label>เรทขาย (฿/หน่วย)</label><input class="f" data-k="sell" inputmode="decimal" value="'+esc(c.sell)+'"'+(bad?' style="border-color:var(--red)"':'')+'></div>'+
+        '<div><label>เรททอน (฿/หน่วย)</label><input class="f" data-k="change" inputmode="decimal" value="'+esc(c.change)+'"></div>'+
+        '<div><label>ปัดทีละ</label><input class="f" data-k="step" inputmode="decimal" value="'+esc(c.step)+'"></div>'+
+        '<div><label>วิธีปัด</label><select class="f" data-k="mode">'+
+          opt("ceil","ปัดขึ้น",c.mode)+opt("round","ปัดใกล้สุด",c.mode)+opt("floor","ปัดลง",c.mode)+opt("none","ไม่ปัด",c.mode)+
+        '</select></div>'+
+      '</div></div>';
+  });
+  document.getElementById("setList").innerHTML = h;
+  document.getElementById("effLbl").textContent = state.effective ? "เรท " + state.effective : "";
+}
+function opt(v,t,cur){ return '<option value="'+v+'"'+(v===cur?' selected':'')+'>'+t+'</option>'; }
+
+var saveT;
+function deferredSave(){ clearTimeout(saveT); saveT=setTimeout(save, 500); }
+var setList = document.getElementById("setList");
+setList.addEventListener("input", function(e){
+  var el=e.target, k=el.dataset.k; if(!k) return;
+  var c = state.currencies[+el.closest(".set").dataset.i];
+  if (k==="on") c.on = el.checked;
+  else if (k==="code"){ var old=c.code; c.code = el.value.toUpperCase().trim(); if(selected===old) selected=c.code; }
+  else c[k] = el.value;
+  if (k==="sell") el.style.borderColor = num(el.value)>0 ? "" : "var(--red)";
+  deferredSave(); refreshAll(false);
+});
+setList.addEventListener("change", function(e){ if (e.target.dataset.k==="mode"||e.target.dataset.k==="on"){ deferredSave(); refreshAll(false);} });
+setList.addEventListener("click", function(e){
+  var b=e.target.closest("[data-act]"); if(!b) return;
+  var i=+b.closest(".set").dataset.i, cs=state.currencies;
+  if (b.dataset.act==="del"){ if(!confirm("ลบ "+(cs[i].code||"สกุลเงินนี้")+" ?")) return; cs.splice(i,1); }
+  if (b.dataset.act==="up" && i>0){ var t=cs[i-1]; cs[i-1]=cs[i]; cs[i]=t; }
+  save(); refreshAll(true);
+});
+document.getElementById("eff").addEventListener("input", function(e){ state.effective=e.target.value; document.getElementById("effLbl").textContent = state.effective ? "เรท "+state.effective : ""; deferredSave(); });
+document.getElementById("useTable").addEventListener("change", function(e){ state.useTable = e.target.checked; save(); refreshAll(false); });
+document.getElementById("addCur").addEventListener("click", function(){
+  state.currencies.push({code:"", name:"", flag:"", sell:"", change:"", step:"1", mode:"ceil", on:true});
+  save(); refreshAll(true);
+  var all=setList.querySelectorAll(".set input.code"); all[all.length-1].focus();
+});
+document.getElementById("resetBtn").addEventListener("click", function(){
+  if(!confirm("คืนค่าเรททั้งหมดเป็นค่าเริ่มต้น? เรทที่แก้ไว้จะหายไป")) return;
+  var keepNotes = state.notes, keepLang = state.noteLang; state = clone(DEFAULTS); delete state.priceTable; if (keepNotes) state.notes = keepNotes; if (keepLang) state.noteLang = keepLang; save(); refreshAll(true);
+});
+
+// ส่งออก / นำเข้า
+function exportText(){ return JSON.stringify(state, null, 1); }
+document.getElementById("expBtn").addEventListener("click", function(){
+  var blob = new Blob([exportText()], {type:"application/json"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "fx-rates-" + (state.effective||"backup").replace(/[^\w-]+/g,"_") + ".json";
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+});
+document.getElementById("copyBtn").addEventListener("click", function(){
+  var t = exportText(), ta=document.getElementById("impText");
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function(){toast("คัดลอกแล้ว");}, function(){ ta.value=t; ta.select(); toast("เลือกข้อความแล้ว กดคัดลอกได้เลย"); });
+  else { ta.value=t; ta.select(); try{document.execCommand("copy"); toast("คัดลอกแล้ว");}catch(e){} }
+});
+function applyImport(txt){
+  try {
+    var p = JSON.parse(txt);
+    if (!p || !Array.isArray(p.currencies)) throw 0;
+    state = p; if(!state.quick) state.quick = DEFAULTS.quick.slice();
+    save(); refreshAll(true); toast("นำเข้าเรทแล้ว");
+  } catch(e){ alert("ไฟล์/ข้อความไม่ถูกต้อง"); }
+}
+document.getElementById("impBtn").addEventListener("click", function(){ document.getElementById("impFile").click(); });
+document.getElementById("impFile").addEventListener("change", function(e){
+  var f=e.target.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ applyImport(r.result); }; r.readAsText(f); e.target.value="";
+});
+document.getElementById("impTextBtn").addEventListener("click", function(){ applyImport(document.getElementById("impText").value); });
+
+// ---------- โน้ต ----------
+function langDef(id){ for (var i=0;i<NOTE_LANGS.length;i++) if (NOTE_LANGS[i].id===id) return NOTE_LANGS[i]; return NOTE_LANGS[0]; }
+function curLang(){ return langDef(state.noteLang || "th").id; }
+function noteText(){ var id=curLang(); return (state.notes && state.notes[id] != null) ? state.notes[id] : langDef(id).text; }
+function renderLangChips(){
+  var h="", cur=curLang();
+  NOTE_LANGS.forEach(function(l){ h += '<button data-l="'+l.id+'"'+(l.id===cur?' class="on"':'')+'>'+esc(l.label)+'<small>'+esc(l.cur)+'</small></button>'; });
+  document.getElementById("langChips").innerHTML = h;
+}
+function renderNote(){
+  renderLangChips();
+  var v = document.getElementById("noteView"); v.lang = curLang();
+  var lines = noteText().split("\n"), h = "", para = [], list = [];
+  function flush(){
+    if (para.length){ h += "<p>"+para.map(esc).join("<br>")+"</p>"; para=[]; }
+    if (list.length){ h += "<ul>"+list.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+"</ul>"; list=[]; }
+  }
+  lines.forEach(function(l){
+    var t = l.trim();
+    if (!t){ flush(); return; }
+    if (/^#\s+/.test(t)){ flush(); h += "<h2>"+esc(t.replace(/^#\s+/,""))+"</h2>"; return; }
+    if (/^[-•]\s+/.test(t)){ if(para.length){ var L=list; list=[]; flush(); list=L; } list.push(t.replace(/^[-•]\s+/,"")); return; }
+    if (list.length) flush();
+    para.push(t);
+  });
+  flush();
+  v.innerHTML = h || '<p class="small">ยังไม่มีโน้ต กด "แก้ไขโน้ต" เพื่อเขียน</p>';
+}
+var editingNote = false;
+function setEditing(on){
+  editingNote = on;
+  var ta = document.getElementById("noteEdit"), b = document.getElementById("noteBtn");
+  if (on) ta.value = noteText();
+  document.getElementById("noteView").classList.toggle("hidden", on);
+  document.getElementById("noteEditWrap").classList.toggle("hidden", !on);
+  document.getElementById("noteResetBtn").classList.toggle("hidden", !on);
+  b.textContent = on ? "บันทึกโน้ต" : "แก้ไขโน้ต (" + langDef(curLang()).label + ")";
+  b.className = on ? "btn" : "btn sec";
+}
+function commitNote(){ state.notes = state.notes || {}; state.notes[curLang()] = document.getElementById("noteEdit").value; save(); }
+document.getElementById("noteBtn").addEventListener("click", function(){
+  if (editingNote){ commitNote(); setEditing(false); renderNote(); } else setEditing(true);
+});
+document.getElementById("langChips").addEventListener("click", function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  if (editingNote){ commitNote(); setEditing(false); }
+  state.noteLang = b.dataset.l; try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(err){}
+  renderNote(); setEditing(false);
+});
+document.getElementById("noteResetBtn").addEventListener("click", function(){
+  if (confirm("คืนโน้ตภาษานี้เป็นฉบับเริ่มต้น?")) document.getElementById("noteEdit").value = langDef(curLang()).text;
+});
+
+// ---------- นำเข้า PDF (ออนไลน์เฉพาะตอนนี้) ----------
+var PDFJS_SOURCES = [
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/",
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/",
+  "https://unpkg.com/pdfjs-dist@3.11.174/build/"
+];
+var CUR_INFO = {
+  USD:["ดอลลาร์สหรัฐ","🇺🇸"],VND:["ด่องเวียดนาม","🇻🇳"],CNY:["หยวนจีน","🇨🇳"],SGD:["ดอลลาร์สิงคโปร์","🇸🇬"],JPY:["เยนญี่ปุ่น","🇯🇵"],
+  INR:["รูปีอินเดีย","🇮🇳"],TWD:["ดอลลาร์ไต้หวัน","🇹🇼"],HKD:["ดอลลาร์ฮ่องกง","🇭🇰"],MYR:["ริงกิตมาเลเซีย","🇲🇾"],MOP:["ปาตากามาเก๊า","🇲🇴"],
+  KRW:["วอนเกาหลี","🇰🇷"],EUR:["ยูโร","🇪🇺"],GBP:["ปอนด์สเตอร์ลิง","🇬🇧"],AUD:["ดอลลาร์ออสเตรเลีย","🇦🇺"],PHP:["เปโซฟิลิปปินส์","🇵🇭"],
+  IDR:["รูเปียห์อินโดนีเซีย","🇮🇩"],LAK:["กีบลาว","🇱🇦"],KHR:["เรียลกัมพูชา","🇰🇭"],MMK:["จ๊าดเมียนมา","🇲🇲"],NZD:["ดอลลาร์นิวซีแลนด์","🇳🇿"],
+  CHF:["ฟรังก์สวิส","🇨🇭"],AED:["ดีร์แฮม","🇦🇪"],BDT:["ตากาบังกลาเทศ","🇧🇩"],LKR:["รูปีศรีลังกา","🇱🇰"],NPR:["รูปีเนปาล","🇳🇵"],KZT:["เทงเกคาซัคสถาน","🇰🇿"]
+};
+function loadScript(src){
+  return new Promise(function(ok, fail){ var sc=document.createElement("script"); sc.src=src; sc.onload=ok; sc.onerror=fail; document.head.appendChild(sc); });
+}
+var pdfjsReady = null;
+function loadPdfjs(){
+  if (pdfjsReady) return pdfjsReady;
+  pdfjsReady = (async function(){
+    for (var i=0;i<PDFJS_SOURCES.length;i++){
+      var base = PDFJS_SOURCES[i];
+      try {
+        await loadScript(base + "pdf.min.js");
+        var lib = window.pdfjsLib; if (!lib) continue;
+        try { // โหลด worker เป็น blob เพื่อให้ทำงานได้แม้เปิดแอปจากไฟล์ในเครื่อง
+          var r = await fetch(base + "pdf.worker.min.js"); if (!r.ok) throw 0;
+          lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([await r.text()], {type:"text/javascript"}));
+        } catch(e){ lib.GlobalWorkerOptions.workerSrc = base + "pdf.worker.min.js"; }
+        return lib;
+      } catch(e){}
+    }
+    pdfjsReady = null;
+    throw new Error("offline");
+  })();
+  return pdfjsReady;
+}
+
+// อ่านข้อความทุกหน้า แล้วจัดเป็นแถวตามตำแหน่ง
+async function pdfRows(lib, buf){
+  var doc = await lib.getDocument({data: buf}).promise, out = [];
+  for (var pn=1; pn<=doc.numPages; pn++){
+    var page = await doc.getPage(pn), tc = await page.getTextContent(), items = [];
+    tc.items.forEach(function(it){
+      var str = (it.str||"").trim(); if (!str) return;
+      var x = it.transform[4], y = it.transform[5], w = it.width || 0;
+      var parts = str.split(/\s+/);
+      var pw = w / parts.length;
+      parts.forEach(function(p, k){ items.push({x: x + pw*k, w: parts.length>1 ? pw*0.6 : w, y: y, s: p}); });
+    });
+    items.sort(function(a,b){ return b.y - a.y || a.x - b.x; });
+    var rows = [];
+    items.forEach(function(it){
+      var r = rows.length ? rows[rows.length-1] : null;
+      if (r && Math.abs(r.y - it.y) < 3) r.items.push(it); else rows.push({y: it.y, items: [it]});
+    });
+    rows.forEach(function(r){
+      r.items.sort(function(a,b){ return a.x - b.x; });
+      var merged = [];
+      r.items.forEach(function(it){ // รวมชิ้นที่ติดกัน เช่น "1." + "0"
+        var last = merged[merged.length-1];
+        if (last && it.x - (last.x + last.w) < 1) { last.s += it.s; last.w = it.x + it.w - last.x; }
+        else merged.push({x:it.x, w:it.w, s:it.s});
+      });
+      out.push(merged.map(function(i){ return i.s; }));
+    });
+  }
+  return out;
+}
+function isNum(t){ return /^-?[\d,]*\.?\d+$/.test(t); }
+function toNum(t){ return parseFloat(String(t).replace(/,/g,"")); }
+
+function parseRatePdf(rows, fileName){
+  var isCode = function(t){ return /^[A-Z]{3}$/.test(t) && t !== "REV" && t !== "THB"; };
+  var res = {codes:null, sell:null, change:null, tableCodes:null, rows:{}, effective:"", problems:[]};
+  for (var i=0;i<rows.length;i++){
+    var r = rows[i], codes = r.filter(isCode);
+    if (!res.codes && codes.length >= 3 && r.indexOf("THB") < 0){
+      res.codes = codes;
+      var nums = [];
+      for (var j=i+1;j<rows.length && nums.length<2;j++){
+        var n = rows[j].filter(isNum);
+        if (n.length === codes.length) nums.push(n.map(toNum));
+        else if (rows[j].filter(isCode).length >= 3) break;
+      }
+      res.sell = nums[0] || null; res.change = nums[1] || null;
+    }
+    if (!res.tableCodes && r[0] === "THB" && codes.length >= 3) res.tableCodes = codes;
+    if (res.tableCodes && r.length === res.tableCodes.length + 1 && r.every(isNum)){
+      res.rows[String(toNum(r[0]))] = r.slice(1).map(toNum);
+    }
+    var m = r.join(" ").match(/Effective\s+(.+)$/i); if (m && !res.effective) res.effective = m[1].trim();
+  }
+  var fm = (fileName||"").replace(/[_-]+/g," ").match(/(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})/);
+  if (fm) res.effective = fm[1];
+  if (!res.codes || !res.sell) res.problems.push("ไม่พบแถวเรทขายในไฟล์");
+  if (!res.change) res.problems.push("ไม่พบแถวเรททอน");
+  if (!res.tableCodes || !Object.keys(res.rows).length) res.problems.push("ไม่พบตาราง Selling price");
+  return res;
+}
+
+// หาเรท + การปัด ที่ทำให้ได้ตัวเลขตรงกับตารางมากที่สุด
+var STEPS = [0.01,0.05,0.1,0.5,1,5,10,50,100,500,1000,5000,10000];
+function niceRates(x){
+  var out = [];
+  [1,2,3,4].forEach(function(sig){ var v = +x.toPrecision(sig); if (v>0) out.push(String(v)); });
+  if (x < 1){ var inv = 1/x; [Math.round(inv), +inv.toPrecision(2), +inv.toPrecision(3)].forEach(function(n){ if (n>0) out.push("1/"+n); }); }
+  return out;
+}
+function inferCurrency(rowsArr, headerSell, headerChange){
+  var cand = {};
+  [headerSell, headerChange].forEach(function(v){ if (v>0) cand[String(v)] = 1; });
+  var big = rowsArr.slice().sort(function(a,b){ return b[0]-a[0]; }).slice(0,3);
+  big.forEach(function(p){ if (p[1]>0) niceRates(p[0]/p[1]).forEach(function(r){ cand[r]=1; }); });
+  var best = null;
+  Object.keys(cand).forEach(function(rs){
+    var rate = num(rs); if (!(rate>0)) return;
+    STEPS.forEach(function(step){
+      ["ceil","round","floor"].forEach(function(mode){
+        var hit = 0;
+        for (var i=0;i<rowsArr.length;i++){ if (Math.abs(roundTo(rowsArr[i][0]/rate, step, mode) - rowsArr[i][1]) < 1e-6) hit++; }
+        var score = hit*10 + (rs===String(headerSell)?3:0) + (mode==="ceil"?1:0) - (rs.length>6?1:0) + STEPS.indexOf(step)*0.1;
+        if (!best || score > best.score) best = {sell:rs, step:String(step), mode:mode, hit:hit, score:score};
+      });
+    });
+  });
+  best.total = rowsArr.length;
+  return best;
+}
+
+var pendingImport = null;
+document.getElementById("pdfBtn").addEventListener("click", function(){ document.getElementById("pdfFile").click(); });
+document.getElementById("pdfFile").addEventListener("change", async function(e){
+  var f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  var out = document.getElementById("pdfResult");
+  out.innerHTML = '<div class="pv"><div class="msg o">กำลังอ่านไฟล์…</div></div>';
+  var lib;
+  try { lib = await loadPdfjs(); }
+  catch(err){ out.innerHTML = '<div class="pv"><div class="msg e">โหลดตัวอ่าน PDF ไม่ได้ — กรุณาต่ออินเทอร์เน็ตแล้วลองใหม่</div></div>'; return; }
+  try {
+    var rows = await pdfRows(lib, new Uint8Array(await f.arrayBuffer()));
+    var p = parseRatePdf(rows, f.name);
+    showPreview(p);
+  } catch(err){
+    out.innerHTML = '<div class="pv"><div class="msg e">อ่านไฟล์นี้ไม่ได้ ('+esc(err && err.message || err)+') — ถ้าเป็นไฟล์สแกน/รูปถ่าย จะอ่านไม่ได้</div></div>';
+  }
+});
+
+function showPreview(p){
+  var out = document.getElementById("pdfResult");
+  if (p.problems.length && (!p.codes || !p.sell)){
+    out.innerHTML = '<div class="pv"><div class="msg e">'+p.problems.map(esc).join("<br>")+'<br>ไฟล์อาจไม่ใช่รูปแบบเดิม ลองส่งไฟล์ให้ Claude ช่วยทำไฟล์เรทแทนได้</div></div>';
+    return;
+  }
+  var tcodes = p.tableCodes || [], thbs = Object.keys(p.rows), list = [], warns = [];
+  p.codes.forEach(function(code, i){
+    var hs = p.sell[i], hc = p.change ? p.change[i] : NaN, ti = tcodes.indexOf(code), inf = null;
+    if (ti >= 0 && thbs.length){
+      var arr = thbs.map(function(t){ return [+t, p.rows[t][ti]]; });
+      inf = inferCurrency(arr, hs, hc);
+    }
+    var item = {code:code, headerSell:hs, change:isFinite(hc)?String(hc):"", inf:inf};
+    item.sell = inf ? inf.sell : String(hs);
+    item.step = inf ? inf.step : ((curByCode(code)||{}).step || "1");
+    item.mode = inf ? inf.mode : ((curByCode(code)||{}).mode || "ceil");
+    item.mismatch = inf && Math.abs(num(inf.sell) - hs) > 1e-9;
+    if (item.mismatch) warns.push(code);
+    list.push(item);
+  });
+  pendingImport = {p:p, list:list};
+  var h = '<div class="pv">';
+  h += '<div class="small" style="margin-top:0">ชุดเรท: <b>'+esc(p.effective || "-")+'</b> · ตารางราคา '+thbs.length+' แถว</div>';
+  if (p.problems.length) h += '<div class="msg w">'+p.problems.map(esc).join("<br>")+'</div>';
+  if (warns.length) h += '<div class="msg w"><b>เรทขายที่หัวกระดาษไม่ตรงกับตาราง:</b> '+warns.join(", ")+'<br>แอปจะยึดราคาตามตาราง (ช่องสีส้ม) ควรเช็กกับผู้ทำ PDF</div>';
+  else if (thbs.length) h += '<div class="msg o">เรทขายที่หัวกระดาษตรงกับตารางทุกสกุล</div>';
+  h += '<div class="tblwrap" style="max-height:none"><table><thead><tr><th>สกุล</th><th>หัวกระดาษ</th><th>ตารางใช้</th><th>ปัด</th><th>ตรง</th><th>เรททอน</th></tr></thead><tbody>';
+  list.forEach(function(it){
+    var modeTh = {ceil:"ขึ้น",round:"ใกล้สุด",floor:"ลง"}[it.mode] || it.mode;
+    h += '<tr><td>'+esc(it.code)+'</td><td>'+esc(String(it.headerSell))+'</td><td'+(it.mismatch?' class="warn"':'')+'>'+esc(fmtRate(it.sell))+'</td><td>'+esc(it.step)+' '+modeTh+'</td><td>'+(it.inf? it.inf.hit+'/'+it.inf.total : '-')+'</td><td>'+esc(it.change)+'</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  h += '<div class="small">"ตรง" = จำนวนแถวในตารางที่คิดจากเรทนี้แล้วได้เท่ากัน ราคาที่มีในตารางแอปจะใช้ตัวเลขจากตารางตรงๆ อยู่แล้ว</div>';
+  h += '<div class="btns"><button class="btn" id="pdfApply">ใช้เรทชุดนี้</button><button class="btn sec" id="pdfCancel">ยกเลิก</button></div></div>';
+  out.innerHTML = h;
+  document.getElementById("pdfCancel").onclick = function(){ pendingImport = null; out.innerHTML = ""; };
+  document.getElementById("pdfApply").onclick = applyPdfImport;
+}
+function applyPdfImport(){
+  if (!pendingImport) return;
+  var p = pendingImport.p, list = pendingImport.list, rates = {};
+  var newCurs = list.map(function(it){
+    var old = curByCode(it.code) || {}, info = CUR_INFO[it.code] || ["",""];
+    rates[it.code] = {sell:it.sell, step:it.step, mode:it.mode};
+    return {code:it.code, name:old.name || info[0], flag:old.flag || info[1], sell:it.sell, change:it.change || old.change || "",
+            step:it.step, mode:it.mode, on: old.on !== undefined ? old.on : true};
+  });
+  // สกุลที่เคยมีแต่ไม่อยู่ในไฟล์ใหม่ เก็บไว้แต่ปิดใช้งาน
+  state.currencies.forEach(function(c){ if (!list.some(function(it){ return it.code===c.code; })){ var k = clone(c); k.on = false; newCurs.push(k); } });
+  state.currencies = newCurs;
+  if (p.tableCodes && Object.keys(p.rows).length) state.priceTable = {codes:p.tableCodes, rows:p.rows, rates:rates};
+  if (p.effective) state.effective = p.effective;
+  state.useTable = true;
+  pendingImport = null;
+  document.getElementById("pdfResult").innerHTML = '<div class="pv"><div class="msg o">อัปเดตเรทแล้ว ✓ ใช้ออฟไลน์ต่อได้เลย · แนะนำกด "ส่งออกไฟล์เรท" เก็บไว้</div></div>';
+  save(); refreshAll(true);
+}
+
+// ---------- แท็บ ----------
+document.querySelector("nav").addEventListener("click", function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("nav button").forEach(function(x){ x.classList.toggle("on", x===b); });
+  ["calc","table","settings","note"].forEach(function(t){ document.getElementById("tab-"+t).classList.toggle("hidden", t!==b.dataset.tab); });
+  if (b.dataset.tab==="table") renderTable();
+  if (b.dataset.tab==="note"){ renderNote(); setEditing(false); }
+  window.scrollTo(0,0);
+});
+
+function refreshAll(withSettings){
+  if (withSettings) renderSettings();
+  renderChips(); renderResults();
+  if (!document.getElementById("tab-table").classList.contains("hidden")) renderTable();
+}
+
+state = load();
+refreshAll(true);
+
+// ใช้ออฟไลน์ได้เมื่อเปิดจากเว็บ (GitHub Pages)
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register("sw.js").catch(function(){});
+}
+})();
+</script>
+</body>
+</html>
