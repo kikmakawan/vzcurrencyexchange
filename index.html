@@ -19,6 +19,8 @@ html,body{margin:0;background:var(--bg);color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai","Sukhumvit Set",Tahoma,sans-serif;font-size:16px}
 header{background:var(--red);color:#fff;padding:calc(env(safe-area-inset-top) + 12px) 16px 0;position:sticky;top:0;z-index:5}
 header h1{margin:0;font-size:18px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline}
+#offLbl{font-size:11px;margin-top:2px;min-height:14px;opacity:.9}
+#offLbl.bad{color:#ffe08a;font-weight:600}
 header h1 small{font-weight:400;font-size:12px;opacity:.85}
 nav{display:flex;gap:4px;margin-top:10px}
 nav button{flex:1;background:none;border:0;color:#fff;opacity:.7;padding:10px 4px 12px;font:inherit;font-size:15px;border-bottom:3px solid transparent;cursor:pointer}
@@ -96,6 +98,7 @@ textarea.f{width:100%;min-height:120px;font-family:ui-monospace,Menlo,monospace;
 <body>
 <header>
   <h1>คำนวณเรทเงิน <small id="effLbl"></small></h1>
+  <div id="offLbl"></div>
   <nav>
     <button data-tab="calc" class="on">คำนวณ</button>
     <button data-tab="table">ตารางราคา</button>
@@ -796,8 +799,26 @@ state = load();
 refreshAll(true);
 
 // ใช้ออฟไลน์ได้เมื่อเปิดจากเว็บ (GitHub Pages)
+var offLbl = document.getElementById("offLbl");
+function setOff(ok, msg){ offLbl.textContent = msg; offLbl.className = ok ? "ok" : "bad"; }
 if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
-  navigator.serviceWorker.register("sw.js").catch(function(){});
+  navigator.serviceWorker.register("sw.js").catch(function(){ setOff(false, "⚠ เปิดโหมดออฟไลน์ไม่ได้"); });
+  // เช็กว่าเก็บแอปไว้ในเครื่องแล้วหรือยัง
+  var checkOffline = function(){
+    if (!window.caches) return;
+    caches.keys().then(function(keys){
+      return Promise.all(keys.filter(function(k){ return k.indexOf("fx-calc") === 0; }).map(function(k){
+        return caches.open(k).then(function(c){ return c.match("index.html"); });
+      }));
+    }).then(function(found){
+      var ready = found.some(Boolean) && navigator.serviceWorker.controller;
+      if (ready) setOff(true, "✓ ใช้ออฟไลน์ได้");
+      else setOff(false, "⚠ ยังใช้ออฟไลน์ไม่ได้ — เปิดแอปอีกครั้งตอนมีเน็ต");
+    }).catch(function(){});
+  };
+  navigator.serviceWorker.ready.then(function(){ setTimeout(checkOffline, 800); });
+  navigator.serviceWorker.addEventListener("controllerchange", function(){ setTimeout(checkOffline, 800); });
+  setTimeout(checkOffline, 3000);
 }
 })();
 </script>
