@@ -192,6 +192,15 @@ textarea.f{width:100%;min-height:120px;font-family:ui-monospace,Menlo,monospace;
       <textarea class="f" id="impText" style="margin-top:10px" placeholder="หรือวางข้อความเรทที่คัดลอกมาที่นี่ แล้วกด 'ใช้ข้อความนี้'"></textarea>
       <div class="btns"><button class="btn sec" id="impTextBtn">ใช้ข้อความนี้</button></div>
     </div>
+    <div class="card pv" style="border-top:0;margin-top:0">
+      <label class="lbl">ตัวแอป</label>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <b id="verInfo"></b>
+        <button class="btn sec" id="updBtn">ตรวจหาอัปเดต</button>
+      </div>
+      <div class="small">แอปเก็บไว้ในเครื่องถาวร ใช้ออฟไลน์ได้ตลอด และจะไม่เปลี่ยนเวอร์ชันเอง จะอัปเดตเมื่อกดปุ่มนี้ตอนมีเน็ตเท่านั้น</div>
+      <div id="updMsg"></div>
+    </div>
   </section>
   <!-- โน้ต -->
   <section id="tab-note" class="hidden">
@@ -798,28 +807,80 @@ function refreshAll(withSettings){
 state = load();
 refreshAll(true);
 
-// ใช้ออฟไลน์ได้เมื่อเปิดจากเว็บ (GitHub Pages)
+// ---------- จำหน้าจอล่าสุด (เปิดกลับมาแล้วอยู่ที่เดิม) ----------
+var UI_KEY = "fx-calc-ui";
+function saveUi(){
+  try {
+    var tab = document.querySelector("nav button.on");
+    localStorage.setItem(UI_KEY, JSON.stringify({thb: thbIn.value, paid: document.getElementById("paid").value,
+      selected: selected, tab: tab ? tab.dataset.tab : "calc"}));
+  } catch(e){}
+}
+thbIn.addEventListener("input", saveUi);
+document.getElementById("paid").addEventListener("input", saveUi);
+document.getElementById("results").addEventListener("click", function(){ setTimeout(saveUi, 0); });
+document.getElementById("clr").addEventListener("click", function(){ setTimeout(saveUi, 0); });
+document.getElementById("chips").addEventListener("click", function(){ setTimeout(saveUi, 0); });
+document.querySelector("nav").addEventListener("click", function(){ setTimeout(saveUi, 0); });
+(function restoreUi(){
+  try {
+    var u = JSON.parse(localStorage.getItem(UI_KEY) || "null"); if (!u) return;
+    thbIn.value = u.thb || ""; selected = u.selected && curByCode(u.selected) ? u.selected : null;
+    renderResults();
+    document.getElementById("paid").value = u.paid || ""; renderChange();
+    if (u.tab && u.tab !== "calc"){ var b = document.querySelector('nav button[data-tab="'+u.tab+'"]'); if (b) b.click(); }
+  } catch(e){}
+})();
+
+// ---------- ใช้ออฟไลน์ + อัปเดตเอง ----------
+var APP_VERSION = "2026.11.24";
 var offLbl = document.getElementById("offLbl");
+var verInfo = document.getElementById("verInfo");
+verInfo.textContent = "เวอร์ชัน " + APP_VERSION;
 function setOff(ok, msg){ offLbl.textContent = msg; offLbl.className = ok ? "ok" : "bad"; }
-if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+var hasSW = "serviceWorker" in navigator && /^https?:$/.test(location.protocol);
+
+if (hasSW) {
   navigator.serviceWorker.register("sw.js").catch(function(){ setOff(false, "⚠ เปิดโหมดออฟไลน์ไม่ได้"); });
-  // เช็กว่าเก็บแอปไว้ในเครื่องแล้วหรือยัง
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){}); // ขอไม่ให้เครื่องลบข้อมูลแอป
   var checkOffline = function(){
     if (!window.caches) return;
-    caches.keys().then(function(keys){
-      return Promise.all(keys.filter(function(k){ return k.indexOf("fx-calc") === 0; }).map(function(k){
-        return caches.open(k).then(function(c){ return c.match("index.html"); });
-      }));
-    }).then(function(found){
-      var ready = found.some(Boolean) && navigator.serviceWorker.controller;
-      if (ready) setOff(true, "✓ ใช้ออฟไลน์ได้");
-      else setOff(false, "⚠ ยังใช้ออฟไลน์ไม่ได้ — เปิดแอปอีกครั้งตอนมีเน็ต");
+    caches.open("fx-calc-app").then(function(c){ return c.match("index.html"); }).then(function(hit){
+      if (hit && navigator.serviceWorker.controller) setOff(true, "✓ ใช้ออฟไลน์ได้");
+      else setOff(false, "⚠ กำลังเตรียมโหมดออฟไลน์ — เปิดแอปอีกครั้งตอนมีเน็ต");
     }).catch(function(){});
   };
   navigator.serviceWorker.ready.then(function(){ setTimeout(checkOffline, 800); });
   navigator.serviceWorker.addEventListener("controllerchange", function(){ setTimeout(checkOffline, 800); });
   setTimeout(checkOffline, 3000);
 }
+
+var updBtn = document.getElementById("updBtn"), updMsg = document.getElementById("updMsg");
+function updSay(t, cls){ updMsg.innerHTML = '<div class="msg '+(cls||"o")+'">'+t+'</div>'; }
+updBtn.addEventListener("click", async function(){
+  if (!hasSW){ updSay("เปิดจากไฟล์ในเครื่อง — อัปเดตโดยดาวน์โหลดไฟล์ใหม่มาแทน", "w"); return; }
+  updBtn.disabled = true; updSay("กำลังตรวจสอบ…");
+  try {
+    var ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 15000);
+    var res = await fetch("index.html?fresh=" + Date.now(), {cache: "no-store", signal: ctl.signal});
+    clearTimeout(to);
+    if (!res.ok || res.redirected) throw new Error("net");
+    var m = (await res.text()).match(/APP_VERSION = "([^"]+)"/);
+    if (!m) throw new Error("net");
+    if (m[1] === APP_VERSION){ updSay("เป็นเวอร์ชันล่าสุดแล้ว ✓"); return; }
+    if (!confirm("มีเวอร์ชันใหม่ (" + m[1] + ") อัปเดตเลยไหม?\nเรทและโน้ตที่ตั้งไว้จะยังอยู่")){ updSay("ยังไม่อัปเดต (เวอร์ชันใหม่: " + m[1] + ")", "w"); return; }
+    var reg = await navigator.serviceWorker.ready;
+    var ch = new MessageChannel();
+    var done = new Promise(function(ok){ ch.port1.onmessage = function(ev){ ok(ev.data); }; });
+    reg.active.postMessage({type: "update"}, [ch.port2]);
+    var r = await done;
+    if (!r.ok) throw new Error("net");
+    updSay("อัปเดตแล้ว กำลังเปิดใหม่…");
+    setTimeout(function(){ location.reload(); }, 600);
+  } catch(e){
+    updSay("ตรวจสอบไม่ได้ — ต้องต่ออินเทอร์เน็ต (แอปเดิมยังใช้ได้ตามปกติ)", "e");
+  } finally { updBtn.disabled = false; }
+});
 })();
 </script>
 </body>
